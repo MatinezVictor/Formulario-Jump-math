@@ -81,7 +81,7 @@ function cargarFiltros(source = 'estado') {
   }
   
   // Filtramos los datos del cache
-  const filtered = cache.colegios.filter(item => item.estado === estado);
+  const filtered = colegios.filter(item => item.estado === estado);
   
   // Actualizar municipios
   if (source === 'estado') {
@@ -92,8 +92,8 @@ function cargarFiltros(source = 'estado') {
       option.textContent = municipio;
       municipioSelect.appendChild(option);
     });
+  }
 }
-
 // Función para enviar el formulario
 async function enviarFormulario(e) {
   e.preventDefault();
