@@ -1,5 +1,8 @@
+// Agrega al inicio del script
+const CACHE_KEY = 'formulario_pendiente';
+
 // Configuración de SheetDB
-const SHEETDB_ENDPOINT = 'https://sheetdb.io/api/v1/1fs3hqwxnyq4g'; // Reemplaza con tu ID
+const SHEETDB_ENDPOINT = 'https://sheetdb.io/api/v1/1fs3hqwxnyq4g';
 
 // Variables globales
 let estadosData = [];
@@ -63,7 +66,7 @@ function inicializarEventos() {
   document.getElementById('mainForm').addEventListener('submit', enviarFormulario);
 }
 
-// Función para cargar filtros (similar a tu versión original pero con datos locales)
+// Función completa para cargar filtros
 function cargarFiltros(source = 'estado') {
   const estado = document.getElementById('estado').value;
   const municipioSelect = document.getElementById('municipio');
@@ -81,7 +84,7 @@ function cargarFiltros(source = 'estado') {
   }
   
   // Filtramos los datos del cache
-  const filtered = colegios.filter(item => item.estado === estado);
+  const filtered = colegiosData.filter(item => item.estado === estado);
   
   // Actualizar municipios
   if (source === 'estado') {
@@ -93,41 +96,117 @@ function cargarFiltros(source = 'estado') {
       municipioSelect.appendChild(option);
     });
   }
+  
+  // Actualizar parroquias
+  const municipio = municipioSelect.value;
+  const parroquias = [...new Set(
+    filtered
+      .filter(item => !municipio || item.municipio === municipio)
+      .map(item => item.parroquia)
+  )].filter(Boolean);
+  
+  parroquiaSelect.innerHTML = '<option value="">Todas las parroquias</option>';
+  parroquias.forEach(parroquia => {
+    const option = document.createElement('option');
+    option.value = parroquia;
+    option.textContent = parroquia;
+    parroquiaSelect.appendChild(option);
+  });
+  
+  cargarColegios();
 }
-// Función para enviar el formulario
+
+// Función para cargar colegios
+function cargarColegios() {
+  const estado = document.getElementById('estado').value;
+  const municipio = document.getElementById('municipio').value;
+  const parroquia = document.getElementById('parroquia').value;
+  const colegioSelect = document.getElementById('colegio');
+  
+  if (!estado) {
+    colegioSelect.innerHTML = '<option value="">Seleccione un estado primero</option>';
+    colegioSelect.disabled = true;
+    return;
+  }
+  
+  const filtered = colegiosData.filter(item => 
+    item.estado === estado &&
+    (!municipio || item.municipio === municipio) &&
+    (!parroquia || item.parroquia === parroquia)
+  );
+  
+  const colegios = [...new Set(filtered.map(item => item.colegio))].filter(Boolean);
+  
+  colegioSelect.innerHTML = '<option value="">Seleccione un colegio</option>';
+  colegios.forEach(colegio => {
+    const option = document.createElement('option');
+    option.value = colegio;
+    option.textContent = colegio;
+    colegioSelect.appendChild(option);
+  });
+  
+  colegioSelect.disabled = false;
+}
+
+// Función para enviar el formulario (corregida)
 async function enviarFormulario(e) {
   e.preventDefault();
   
-  // Validaciones (mantén tus validaciones existentes)
+  // Validar campos requeridos
+  const requiredFields = ['nombre', 'apellido', 'email', 'genero', 'fechaNacimiento', 'telefono', 'documento', 'perfil', 'estado'];
+  let isValid = true;
   
-  // Recoger datos del formulario
+  requiredFields.forEach(fieldId => {
+    const field = document.getElementById(fieldId);
+    if (!field.value) {
+      field.style.borderColor = '#e74c3c';
+      isValid = false;
+    } else {
+      field.style.borderColor = '#ddd';
+    }
+  });
+  
+  // Validar colegio (select o manual)
+  const colegioSelect = document.getElementById('colegio');
+  const colegioManual = document.getElementById('colegioManual')?.value;
+  
+  if (!colegioSelect.value && !colegioManual) {
+    alert('Por favor seleccione o escriba el nombre de su colegio');
+    return;
+  }
+  
+  if (!isValid) {
+    alert('Por favor complete todos los campos requeridos');
+    return;
+  }
+  
+  // Recoger datos del formulario (ajustado a tus IDs reales)
   const formData = {
     Fecha: new Date().toISOString(),
-    Nombre: document.getElementById('Nombre').value,
-    Apellido: document.getElementById('Apellido').value,
-    Email: document.getElementById('Email').value,
-    Genero: document.getElementById('Género').value,
-    Fecha_Nacimiento: document.getElementById('Fecha Nacimiento').value,
-    Telefono: document.getElementById('Teléfono').value,
-    Documento: document.getElementById('Documento').value,
-    Perfil: document.getElementById('Perfil').value,
-    Perfil_Otro: document.getElementById('Perfil Otro').value,
-    Macro_FE: document.getElementById('Macro_FE').value,
-    Macro_AVEC: document.getElementById('Macro_AVEC').value,
-    Macro_Unicef: document.getElementById('Macro_Unicef').value,
-    Macro_ADIEP: document.getElementById('Macro_ADIEP').value,
-    Macro_amblema: document.getElementById('Macro_amblema').value,
-    Macro_impromta: document.getElementById('Macro_impromta').value,
-    Plan_Profuturo: document.getElementById('Plan Profuturo').value,
-    Cursos_Previos: document.getElementById('Cursos Previos').value,
-    Medio_Informacion: document.getElementById('Medio Información').value,
-    Medio_Otro: document.getElementById('Medio Otro').value,
-    Estado: document.getElementById('Estado').value,
-    Municipio: document.getElementById('Municipio').value,
-    Parroquia: document.getElementById('Parroquia').value,
-    Colegio: document.getElementById('Colegio').value,
-    Registrado: document.getElementById('El colegio esta registrado').value,
-    
+    Nombre: document.getElementById('nombre').value,
+    Apellido: document.getElementById('apellido').value,
+    Email: document.getElementById('email').value,
+    Género: document.getElementById('genero').value,
+    "Fecha Nacimiento": document.getElementById('fechaNacimiento').value,
+    Teléfono: document.getElementById('telefono').value,
+    Documento: document.getElementById('documento').value,
+    Perfil: document.getElementById('perfil').value,
+    "Perfil Otro": document.getElementById('perfilOtro')?.value || '',
+    "Macro_FE": document.querySelector('input[name="macro"][value="FE y Alegria"]').checked ? 'Sí' : 'No',
+    "Macro_AVEC": document.querySelector('input[name="macro"][value="AVEC"]').checked ? 'Sí' : 'No',
+    "Macro_Unicef": document.querySelector('input[name="macro"][value="Unicef"]').checked ? 'Sí' : 'No',
+    "Macro_ADIEP": document.querySelector('input[name="macro"][value="ADIEP"]').checked ? 'Sí' : 'No',
+    "Macro_amblema": document.querySelector('input[name="macro"][value="amblema"]').checked ? 'Sí' : 'No',
+    "Macro_impromta": document.querySelector('input[name="macro"][value="impromta"]').checked ? 'Sí' : 'No',
+    "Plan Profuturo": document.getElementById('planProfuturo').value,
+    "Cursos Previos": document.getElementById('cursosPrevios').value,
+    "Medio Información": document.getElementById('medioInfo').value,
+    "Medio Otro": document.getElementById('medioOtro')?.value || '',
+    Estado: document.getElementById('estado').value,
+    Municipio: document.getElementById('municipio').value || '',
+    Parroquia: document.getElementById('parroquia').value || '',
+    Colegio: colegioSelect.value || colegioManual,
+    "Es Colegio Manual": !colegioSelect.value ? 'Sí' : 'No'
   };
   
   try {
@@ -135,7 +214,7 @@ async function enviarFormulario(e) {
     button.disabled = true;
     button.textContent = 'Enviando...';
     
-    // Enviar a SheetDB (hoja de Respuestas)
+    // Enviar a SheetDB
     const response = await fetch(SHEETDB_ENDPOINT, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -161,45 +240,43 @@ async function enviarFormulario(e) {
   }
 }
 
-// Mantén tus funciones de UI (togglePerfilOtro, etc.)
-  function togglePerfilOtro() {
-      const perfil = document.getElementById('perfil').value;
-      document.getElementById('perfilOtroGroup').style.display = 
-        (perfil === 'Otro') ? 'block' : 'none';
-    }
-    
-    function toggleMedioOtro() {
-      const medio = document.getElementById('medioInfo').value;
-      document.getElementById('medioOtroGroup').style.display = 
-        (medio === 'Otro') ? 'block' : 'none';
-    }
-    
-    function toggleColegioManual() {
-      const colegioSelect = document.getElementById('colegio');
-      const manualGroup = document.getElementById('colegioManualGroup');
-      if(colegioSelect.value) {
-        manualGroup.style.display = 'none';
-        document.getElementById('colegioManual').value = '';
-      }
-    }
-    
-    function mostrarCampoManual() {
-      const manualGroup = document.getElementById('colegioManualGroup');
-      const colegioSelect = document.getElementById('colegio');
-      
-      manualGroup.style.display = 'block';
-      colegioSelect.value = '';
-    }
+// Guardar datos si falla el envío
+localStorage.setItem(CACHE_KEY, JSON.stringify(formData));
 
-    // Solo resetear si el cambio viene del estado
-  if (source === 'estado') {
-    municipioSelect.innerHTML = '<option value="">Todos los municipios</option>';
-    parroquiaSelect.innerHTML = '<option value="">Todas las parroquias</option>';
+// Funciones de UI (mantenidas igual)
+function togglePerfilOtro() {
+  const perfil = document.getElementById('perfil').value;
+  document.getElementById('perfilOtroGroup').style.display = 
+    (perfil === 'Otro') ? 'block' : 'none';
+}
+
+function toggleMedioOtro() {
+  const medio = document.getElementById('medioInfo').value;
+  document.getElementById('medioOtroGroup').style.display = 
+    (medio === 'Otro') ? 'block' : 'none';
+}
+
+function toggleColegioManual() {
+  const colegioSelect = document.getElementById('colegio');
+  const manualGroup = document.getElementById('colegioManualGroup');
+  if(colegioSelect.value) {
+    manualGroup.style.display = 'none';
+    document.getElementById('colegioManual').value = '';
   }
+}
+
+function mostrarCampoManual() {
+  const manualGroup = document.getElementById('colegioManualGroup');
+  const colegioSelect = document.getElementById('colegio');
   
-  // Si no hay estado seleccionado, limpiar todo
-  if (!estado) {
-    document.getElementById('colegio').innerHTML = '<option value="">Seleccione un estado primero</option>';
-    document.getElementById('colegio').disabled = true;
-    return;
-  }
+  manualGroup.style.display = 'block';
+  colegioSelect.value = '';
+}
+
+.catch(error => {
+  console.error('Detalles del error:', {
+    error: error.message,
+    stack: error.stack,
+    response: error.response?.text()
+  });
+});
