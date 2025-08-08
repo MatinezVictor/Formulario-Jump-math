@@ -65,8 +65,33 @@ function inicializarEventos() {
 
 // Función para cargar filtros (similar a tu versión original pero con datos locales)
 function cargarFiltros(source = 'estado') {
-  // ... (implementación similar a la que te envié antes)
-  // Usa los datos de colegiosData en lugar de google.script.run
+  const estado = document.getElementById('estado').value;
+  const municipioSelect = document.getElementById('municipio');
+  const parroquiaSelect = document.getElementById('parroquia');
+  
+  if (source === 'estado') {
+    municipioSelect.innerHTML = '<option value="">Todos los municipios</option>';
+    parroquiaSelect.innerHTML = '<option value="">Todas las parroquias</option>';
+  }
+  
+  if (!estado) {
+    document.getElementById('colegio').innerHTML = '<option value="">Seleccione un estado primero</option>';
+    document.getElementById('colegio').disabled = true;
+    return;
+  }
+  
+  // Filtramos los datos del cache
+  const filtered = cache.colegios.filter(item => item.estado === estado);
+  
+  // Actualizar municipios
+  if (source === 'estado') {
+    const municipios = [...new Set(filtered.map(item => item.municipio))].filter(Boolean);
+    municipios.forEach(municipio => {
+      const option = document.createElement('option');
+      option.value = municipio;
+      option.textContent = municipio;
+      municipioSelect.appendChild(option);
+    });
 }
 
 // Función para enviar el formulario
@@ -78,11 +103,31 @@ async function enviarFormulario(e) {
   // Recoger datos del formulario
   const formData = {
     Fecha: new Date().toISOString(),
-    Nombre: document.getElementById('nombre').value,
-    Apellido: document.getElementById('apellido').value,
-    Email: document.getElementById('email').value,
-    // ... todos los demás campos
-    // IMPORTANTE: Los nombres deben coincidir con los encabezados de tu Sheet
+    Nombre: document.getElementById('Nombre').value,
+    Apellido: document.getElementById('Apellido').value,
+    Email: document.getElementById('Email').value,
+    Genero: document.getElementById('Género').value,
+    Fecha_Nacimiento: document.getElementById('Fecha Nacimiento').value,
+    Telefono: document.getElementById('Teléfono').value,
+    Documento: document.getElementById('Documento').value,
+    Perfil: document.getElementById('Perfil').value,
+    Perfil_Otro: document.getElementById('Perfil Otro').value,
+    Macro_FE: document.getElementById('Macro_FE').value,
+    Macro_AVEC: document.getElementById('Macro_AVEC').value,
+    Macro_Unicef: document.getElementById('Macro_Unicef').value,
+    Macro_ADIEP: document.getElementById('Macro_ADIEP').value,
+    Macro_amblema: document.getElementById('Macro_amblema').value,
+    Macro_impromta: document.getElementById('Macro_impromta').value,
+    Plan_Profuturo: document.getElementById('Plan Profuturo').value,
+    Cursos_Previos: document.getElementById('Cursos Previos').value,
+    Medio_Informacion: document.getElementById('Medio Información').value,
+    Medio_Otro: document.getElementById('Medio Otro').value,
+    Estado: document.getElementById('Estado').value,
+    Municipio: document.getElementById('Municipio').value,
+    Parroquia: document.getElementById('Parroquia').value,
+    Colegio: document.getElementById('Colegio').value,
+    Registrado: document.getElementById('El colegio esta registrado').value,
+    
   };
   
   try {
@@ -117,3 +162,44 @@ async function enviarFormulario(e) {
 }
 
 // Mantén tus funciones de UI (togglePerfilOtro, etc.)
+  function togglePerfilOtro() {
+      const perfil = document.getElementById('perfil').value;
+      document.getElementById('perfilOtroGroup').style.display = 
+        (perfil === 'Otro') ? 'block' : 'none';
+    }
+    
+    function toggleMedioOtro() {
+      const medio = document.getElementById('medioInfo').value;
+      document.getElementById('medioOtroGroup').style.display = 
+        (medio === 'Otro') ? 'block' : 'none';
+    }
+    
+    function toggleColegioManual() {
+      const colegioSelect = document.getElementById('colegio');
+      const manualGroup = document.getElementById('colegioManualGroup');
+      if(colegioSelect.value) {
+        manualGroup.style.display = 'none';
+        document.getElementById('colegioManual').value = '';
+      }
+    }
+    
+    function mostrarCampoManual() {
+      const manualGroup = document.getElementById('colegioManualGroup');
+      const colegioSelect = document.getElementById('colegio');
+      
+      manualGroup.style.display = 'block';
+      colegioSelect.value = '';
+    }
+
+    // Solo resetear si el cambio viene del estado
+  if (source === 'estado') {
+    municipioSelect.innerHTML = '<option value="">Todos los municipios</option>';
+    parroquiaSelect.innerHTML = '<option value="">Todas las parroquias</option>';
+  }
+  
+  // Si no hay estado seleccionado, limpiar todo
+  if (!estado) {
+    document.getElementById('colegio').innerHTML = '<option value="">Seleccione un estado primero</option>';
+    document.getElementById('colegio').disabled = true;
+    return;
+  }
